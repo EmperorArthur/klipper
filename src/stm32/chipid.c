@@ -9,6 +9,7 @@
 #include "generic/usbstd.h" // usb_string_descriptor
 #include "internal.h" // UID_BASE
 #include "sched.h" // DECL_INIT
+#include "command.h" // sendf
 
 #define CHIP_UID_LEN 12
 
@@ -33,3 +34,9 @@ chipid_init(void)
         canserial_set_uuid((void*)UID_BASE, CHIP_UID_LEN);
 }
 DECL_INIT(chipid_init);
+
+void command_get_chip_id(uint32_t *args) {
+    sendf("chip_id id=%.*s", CHIP_UID_LEN, UID_BASE);
+}
+DECL_COMMAND_FLAGS(command_get_chip_id, HF_IN_SHUTDOWN, "get_chip_id");
+
