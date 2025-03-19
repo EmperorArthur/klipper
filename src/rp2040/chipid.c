@@ -10,6 +10,7 @@
 #include "generic/usbstd.h" // usb_string_descriptor
 #include "internal.h" // bootrom_read_unique_id
 #include "sched.h" // DECL_INIT
+#include "command.h" // sendf
 
 #define CHIP_UID_LEN 8
 
@@ -39,3 +40,11 @@ chipid_init(void)
         canserial_set_uuid(data, CHIP_UID_LEN);
 }
 DECL_INIT(chipid_init);
+
+void command_get_chip_id(uint32_t *args) {
+    uint8_t data[CHIP_UID_LEN] = {};
+    bootrom_read_unique_id(data, sizeof(data));
+    sendf("chip_id id=%.*s", CHIP_UID_LEN, data);
+}
+DECL_COMMAND_FLAGS(command_get_chip_id, HF_IN_SHUTDOWN, "get_chip_id");
+
