@@ -103,6 +103,7 @@ SD_SPI_SPEED = 400000
 RESET_CMD = "reset"
 GET_CFG_CMD = "get_config"
 GET_CFG_RESPONSES = ( # Supported responses (sorted by newer revisions first).
+    "config is_config=%c crc=%u is_shutdown=%c move_count=%hu move_queues=%c", # move_queue work
     "config is_config=%c crc=%u is_shutdown=%c move_count=%hu", # d4aee4f
     "config is_config=%c crc=%u move_count=%hu is_shutdown=%c"  # Original
 )

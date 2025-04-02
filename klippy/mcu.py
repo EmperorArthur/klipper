@@ -718,7 +718,7 @@ class MCU:
     def _send_get_config(self):
         get_config_cmd = self.lookup_query_command(
             "get_config",
-            "config is_config=%c crc=%u is_shutdown=%c move_count=%hu")
+            "config is_config=%c crc=%u is_shutdown=%c move_count=%hu move_queues=%c")
         if self.is_fileoutput():
             return { 'is_config': 0, 'move_count': 500, 'crc': 0 }
         config_params = get_config_cmd.send()

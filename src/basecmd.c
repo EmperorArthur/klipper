@@ -1,6 +1,7 @@
 // Basic infrastructure commands.
 //
 // Copyright (C) 2016-2020  Kevin O'Connor <kevin@koconnor.net>
+// Copyright (C) 2025  Arthur Moore <Arthur.Moore.git@cd-net.net>
 //
 // This file may be distributed under the terms of the GNU GPLv3 license.
 
@@ -62,6 +63,7 @@ static struct move_node *move_free_list;
 static void *move_list;
 static uint16_t move_count;
 static uint8_t move_item_size;
+static struct move_queue_head *move_queues;
 
 // Is the config and move queue finalized?
 static int
@@ -134,19 +136,79 @@ move_queue_pop(struct move_queue_head *mh)
 void
 move_queue_clear(struct move_queue_head *mh)
 {
-    mh->first = NULL;
+    mh->first = mh->last = NULL;
 }
+
+/**
+ * @brief Not relying memory being zero at power on.
+ */
+void
+move_queue_init(void)
+{
+    move_queues = NULL;
+    move_item_size = sizeof(*move_free_list);
+}
+DECL_INIT(move_queue_init);
 
 // Initialize a move_queue with nodes of the give size
 void
 move_queue_setup(struct move_queue_head *mh, int size)
 {
-    mh->first = mh->last = NULL;
-
-    if (size > UINT8_MAX || is_finalized())
+    if (is_finalized())
+        shutdown("Config has already been finalized.");
+    if (size > UINT8_MAX)
         shutdown("Invalid move request size");
     if (size > move_item_size)
         move_item_size = size;
+
+    mh->first = mh->last = NULL;
+    mh->next = NULL;
+    mh->node_size = size;
+
+    // Allow global tracking of all move queues.
+    if (move_queues == NULL) {
+        move_queues = mh;
+    } else {
+        struct move_queue_head *mq = move_queues;
+        while(mh->next != NULL) {
+            mq = mq->next;
+        }
+        mq->next = mh;
+    }
+}
+
+/**
+ * @brief Total number of move_queue_head objects being tracked.
+ */
+uint8_t
+get_move_queue_count(void)
+{
+    if (move_queues == NULL) {
+        return 0;
+    }
+    uint8_t count = 1;
+    struct move_queue_head *mq = move_queues;
+    while(mq->next != NULL) {
+        mq = mq->next;
+        count++;
+    }
+    return count;
+}
+
+struct move_queue_head *
+get_move_queue(uint8_t index)
+{
+    if (move_queues == NULL)
+        shutdown("No move queues");
+
+    struct move_queue_head *mq = move_queues;
+    while(index > 0) {
+        index--;
+        if (mq->next == NULL)
+            shutdown("Index Out Of Range");
+        mq = mq->next;
+    }
+    return mq;
 }
 
 void
@@ -171,12 +233,27 @@ move_finalize(void)
 {
     if (is_finalized())
         shutdown("Already finalized");
-    struct move_queue_head dummy;
-    move_queue_setup(&dummy, sizeof(*move_free_list));
     move_list = alloc_chunks(move_item_size, 1024, &move_count);
     move_reset();
 }
 
+void
+command_get_queue_stats(uint32_t *args)
+{
+    uint8_t index = args[0];
+    struct move_queue_head *mq = get_move_queue(index);
+
+    uint16_t node_count = 0;
+    struct move_node *node = mq->first;
+    while(node != NULL) {
+        node_count++;
+        node = node->next;
+    }
+
+    sendf("move_queue node_size=%c in_queue=%hu"
+          , mq->node_size, node_count);
+}
+DECL_COMMAND_FLAGS(command_get_queue_stats, HF_IN_SHUTDOWN, "get_queue_stats index=%c");
 
 /****************************************************************
  * Generic object ids (oid)
@@ -244,8 +321,8 @@ static uint32_t config_crc;
 void
 command_get_config(uint32_t *args)
 {
-    sendf("config is_config=%c crc=%u is_shutdown=%c move_count=%hu"
-          , is_finalized(), config_crc, sched_is_shutdown(), move_count);
+    sendf("config is_config=%c crc=%u is_shutdown=%c move_count=%hu move_queues=%c"
+          , is_finalized(), config_crc, sched_is_shutdown(), move_count, get_move_queue_count());
 }
 DECL_COMMAND_FLAGS(command_get_config, HF_IN_SHUTDOWN, "get_config");
 

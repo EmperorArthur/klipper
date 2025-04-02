@@ -9,6 +9,11 @@ struct move_node {
 };
 struct move_queue_head {
     struct move_node *first, *last;
+    /**
+     * @brief Allows keeping track of all move_queues in one place.
+     */
+    struct move_queue_head *next;
+    uint8_t node_size;
 };
 
 void *alloc_chunk(size_t size);
