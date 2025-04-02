@@ -4,7 +4,7 @@
 # Copyright (C) 2016-2021  Kevin O'Connor <kevin@koconnor.net>
 #
 # This file may be distributed under the terms of the GNU GPLv3 license.
-import sys, optparse, os, re, logging
+import sys, optparse, os, re, logging, json
 import util, reactor, serialhdl, msgproto, clocksync
 
 help_txt = """
@@ -52,6 +52,7 @@ class KeyboardReader:
             "DELAY": self.command_DELAY, "FLOOD": self.command_FLOOD,
             "SUPPRESS": self.command_SUPPRESS, "STATS": self.command_STATS,
             "LIST": self.command_LIST, "HELP": self.command_HELP,
+            "IDENTIFY_JSON": self.command_IDENTIFY_JSON,
         }
         self.eval_globals = {}
     def connect(self, eventtime):
@@ -205,6 +206,10 @@ class KeyboardReader:
         lvars = sorted(self.eval_globals.items())
         out += "\n  ".join([""] + ["%s: %s" % (k, v) for k, v in lvars])
         self.output(out)
+    def command_IDENTIFY_JSON(self, parts):
+        mp = self.ser.get_msgparser()
+        data = json.loads(mp.raw_identify_data)
+        self.output(json.dumps(data, indent='  '))
     def command_HELP(self, parts):
         self.output(help_txt)
     def translate(self, line, eventtime):
