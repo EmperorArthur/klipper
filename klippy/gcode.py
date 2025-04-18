@@ -263,7 +263,7 @@ class GCodeDispatch:
             eparams = { k.upper(): v for k, v in eparams }
         except ValueError as e:
             raise self.error("Malformed command '%s'"
-                             % (gcmd.get_commandline(),))
+                             % (gcmd.get_commandline(),)) from e
         # Update gcmd with new parameters
         gcmd._params.clear()
         gcmd._params.update(eparams)
