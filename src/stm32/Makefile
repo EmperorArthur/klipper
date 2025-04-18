@@ -18,6 +18,7 @@ dirs-$(CONFIG_MACH_STM32L4) += lib/stm32l4
 MCU := $(shell echo $(CONFIG_MCU))
 MCU_UPPER := $(shell echo $(CONFIG_MCU) | tr a-z A-Z | tr X x)
 
+CFLAGS-$(CONFIG_HAVE_LIMITED_CODE_SIZE) += -Os
 CFLAGS-$(CONFIG_MACH_STM32F0) += -mcpu=cortex-m0 -Ilib/stm32f0/include
 CFLAGS-$(CONFIG_MACH_STM32F103) += -mcpu=cortex-m3
 CFLAGS-$(CONFIG_MACH_N32G45x) += -mcpu=cortex-m4 -Ilib/n32g45x/include
@@ -75,25 +76,29 @@ src-$(CONFIG_MACH_STM32L4) += stm32/gpioperiph.c stm32/gpio.c
 src-$(CONFIG_MACH_STM32L4) += stm32/stm32h7_adc.c stm32/stm32f0_i2c.c
 spi-src-y := stm32/spi.c
 spi-src-$(CONFIG_MACH_STM32H7) := stm32/stm32h7_spi.c
-src-$(CONFIG_HAVE_GPIO_SPI) += $(spi-src-y)
-sdio-src-y := stm32/sdio.c
-src-$(CONFIG_HAVE_GPIO_SDIO) += $(sdio-src-y)
-usb-src-$(CONFIG_HAVE_STM32_USBFS) := stm32/usbfs.c
-usb-src-$(CONFIG_HAVE_STM32_USBOTG) := stm32/usbotg.c
-src-$(CONFIG_USBSERIAL) += $(usb-src-y) stm32/chipid.c generic/usb_cdc.c
+src-$(CONFIG_WANT_SPI) += $(spi-src-y)
+i2c-src-y := stm32/stm32f0_i2c.c
+i2c-src-$(CONFIG_MACH_STM32F1) := stm32/i2c.c
+i2c-src-$(CONFIG_MACH_STM32F2) := stm32/i2c.c
+i2c-src-$(CONFIG_MACH_STM32F4) := stm32/i2c.c
+src-$(CONFIG_WANT_I2C) += $(i2c-src-y)
 serial-src-y := stm32/serial.c
 serial-src-$(CONFIG_MACH_STM32F0) := stm32/stm32f0_serial.c
 serial-src-$(CONFIG_MACH_STM32G0) := stm32/stm32f0_serial.c
 serial-src-$(CONFIG_MACH_STM32G4) := stm32/stm32f0_serial.c
 serial-src-$(CONFIG_MACH_STM32H7) := stm32/stm32f0_serial.c
 src-$(CONFIG_SERIAL) += $(serial-src-y) generic/serial_irq.c
+usb-src-$(CONFIG_HAVE_STM32_USBFS) := stm32/usbfs.c
+usb-src-$(CONFIG_HAVE_STM32_USBOTG) := stm32/usbotg.c
+src-$(CONFIG_USBSERIAL) += $(usb-src-y) stm32/chipid.c generic/usb_cdc.c
 canbus-src-y := generic/canserial.c ../lib/fast-hash/fasthash.c
 canbus-src-$(CONFIG_HAVE_STM32_CANBUS) += stm32/can.c
 canbus-src-$(CONFIG_HAVE_STM32_FDCANBUS) += stm32/fdcan.c
 src-$(CONFIG_CANSERIAL) += $(canbus-src-y) generic/canbus.c stm32/chipid.c
 src-$(CONFIG_USBCANBUS) += $(usb-src-y) $(canbus-src-y)
 src-$(CONFIG_USBCANBUS) += stm32/chipid.c generic/usb_canbus.c
-src-$(CONFIG_HAVE_GPIO_HARD_PWM) += stm32/hard_pwm.c
+src-$(CONFIG_WANT_HARD_PWM) += stm32/hard_pwm.c
+src-$(CONFIG_HAVE_GPIO_SDIO) += stm32/sdio.c
 
 # Binary output file rules
 target-y += $(OUT)klipper.bin
