@@ -208,9 +208,11 @@ class HomingViaProbeHelper:
         self.multi_probe_pending = False
         self.z_min_position = lookup_minimum_z(config)
         self.results = []
+        self.name = config.get_name()
+        self.short_name = short_name = self.name.split()[-1]
         LookupZSteppers(config, self.mcu_probe.add_stepper)
         # Register z_virtual_endstop pin
-        self.printer.lookup_object('pins').register_chip('probe', self)
+        self.printer.lookup_object('pins').register_chip(short_name, self)
         # Register event handlers
         self.printer.register_event_handler("homing:homing_move_begin",
                                             self._handle_homing_move_begin)
